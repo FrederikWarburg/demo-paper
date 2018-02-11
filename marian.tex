@@ -18,7 +18,7 @@
 
 \usepackage{url}
 
-%\aclfinalcopy % Uncomment this line for the final submission
+\aclfinalcopy % Uncomment this line for the final submission
 %\def\aclpaperid{***} %  Enter the acl Paper ID here
 
 %\setlength\titlebox{5cm}
@@ -27,9 +27,8 @@
 % smaller than 5cm (the original size); we will check this
 % in the camera-ready version and ask you to change it back.
 
-\newcommand\BibTeX{B{\sc ib}\TeX}
 
-\title{Marian Demo Paper}
+\title{Marian NMT: Fast Neural Machine Translation in C++}
 
 \author{First Author \\
   Affiliation / Address line 1 \\
@@ -47,13 +46,9 @@
 \begin{document}
 \maketitle
 \begin{abstract}
-  This document contains the instructions for preparing a camera-ready
-  manuscript for the proceedings of NAACL-HLT 2018. The document itself
-  conforms to its own specifications, and is therefore an example of
-  what your manuscript should look like. These instructions should be
-  used for both papers submitted for review and for final versions of
-  accepted papers.  Authors are asked to conform to all the directions
-  reported in this document.
+Marian is an efficient Neural Machine Translation framework written in pure C++ with minimal dependencies. It has mainly been developed at the Adam Mickiewicz University in Poznań (AMU) and at the University of Edinburgh.
+It is currently being deployed in multiple European projects and is the main translation and training engine behind the neural MT launch at the World Intellectual Property Organization.
+  
 \end{abstract}
 
 \section{Introduction}
@@ -93,15 +88,9 @@ itself, as Gusfield~\shortcite{Gusfield:97}.
 
 \section*{Acknowledgments}
 
-The acknowledgments should go immediately before the references.  Do
-not number the acknowledgments section. Do not include this section
-when submitting your paper for review. \\
+The development of Marian received funding from the European Union's Horizon 2020 Research and Innovation Programme under grant agreements 688139 (SUMMA; 2016-2019), 645487 (Modern MT; 2015-2017), 644333 (TraMOOC; 2015-2017), 644402 (HimL; 2015-2017), the Amazon Academic Research Awards program, and the World Intellectual Property Organization. \\
 
 \noindent {\bf Preparing References:} \\
-
-Include your own bib file like this:
-\verb|\bibliographystyle{acl_natbib}|
-\verb|\bibliography{naaclhlt2018}|
 
 Where \verb|naaclhlt2018| corresponds to a naaclhlt2018.bib file.
 \bibliography{naaclhlt2018}
