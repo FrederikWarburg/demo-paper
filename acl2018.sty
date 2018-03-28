@@ -1,6 +1,6 @@
-% This is the LaTex style file for NAACL 2018. Major modifications include
-% changing the color of the line numbers to a light gray; changing font size of abstract to be 10pt; changing caption font size to be 10pt.
-% -- Meg Mitchell and Stephanie Lukin
+%
+% 2018: modified line numbering to be in gainsboro gray color so one
+% can write comments on the margins.	-- Shay Cohen / Kevin Gimpel / Wei Lu
 
 % 2017: modified to support DOI links in bibliography.  Now uses
 % natbib package rather than defining citation commands in this file.
@@ -90,7 +90,7 @@
 % where <new height> can be something larger than 5cm
 
 % include hyperref, unless user specifies nohyperref option like this:
-% \usepackage[nohyperref]{naaclhlt2018}
+% \usepackage[nohyperref]{acl2018}
 \newif\ifacl@hyperref
 \DeclareOption{hyperref}{\acl@hyperreftrue}
 \DeclareOption{nohyperref}{\acl@hyperreffalse}
@@ -106,9 +106,11 @@
   % It provides a backup, no-op definiton of \href.
   % This is necessary because \href command is used in the acl_natbib.bst file.
   \def\href#1#2{{#2}}
+  % We still need to load xcolor in this case because the lighter line numbers require it. (SC/KG/WL) 
+  \usepackage{xcolor}
 \fi
 
-\typeout{Conference Style for NAACL-HLT 2018}
+\typeout{Conference Style for ACL 2018}
 
 % NOTE:  Some laser printers have a serious problem printing TeX output.
 % These printing devices, commonly known as ``write-white'' laser
@@ -320,7 +322,6 @@
 \textheight=#5\vbadness=10000\vfuzz=120ex\overfullrule=0pt%
 \global\setbox\aclrulerbox=\vbox to \textheight{%
 {\parskip=0pt\hfuzz=150em\cv@boxheight=\textheight
-\color{gray}
 \cv@lineheight=#1\global\aclrulercount=#2%
 \cv@tot\cv@boxheight\divide\cv@tot\cv@lineheight\advance\cv@tot2%
 \cv@refno1\vskip-\cv@lineheight\vskip1ex%
@@ -332,11 +333,16 @@
 
 
 \def\aclpaperid{***}
-\def\confidential{NAACL-HLT 2018 Submission~\aclpaperid.  Confidential Review Copy.  DO NOT DISTRIBUTE.}
+\def\confidential{ACL 2018 Submission~\aclpaperid.  Confidential Review Copy.  DO NOT DISTRIBUTE.}
 
 %% Page numbering, Vruler and Confidentiality %%
 % \makevruler[<SCALE>][<INITIAL_COUNT>][<STEP>][<DIGITS>][<HEIGHT>]
-\def\aclruler#1{\makevruler[14.17pt][#1][1][3][\textheight]\usebox{\aclrulerbox}}
+
+% SC/KG/WL - changed line numbering to gainsboro
+\definecolor{gainsboro}{rgb}{0.8, 0.8, 0.8}
+%\def\aclruler#1{\makevruler[14.17pt][#1][1][3][\textheight]\usebox{\aclrulerbox}}  %% old line
+\def\aclruler#1{\textcolor{gainsboro}{\makevruler[14.17pt][#1][1][3][\textheight]\usebox{\aclrulerbox}}}
+
 \def\leftoffset{-2.1cm} %original: -45pt
 \def\rightoffset{17.5cm} %original: 500pt
 \ifaclfinal\else\pagenumbering{arabic}
@@ -345,7 +351,7 @@
 \AtPageLowishCenter{\thepage}
 \aclruleroffset=\textheight
 \advance\aclruleroffset4pt
-  \AtTextUpperLeft{% 
+  \AtTextUpperLeft{%
     \put(\LenToUnit{\leftoffset},\LenToUnit{-\aclruleroffset}){%left ruler
       \aclruler{\aclrulercount}}
     \put(\LenToUnit{\rightoffset},\LenToUnit{-\aclruleroffset}){%right ruler
@@ -369,7 +375,7 @@
 	     \bf\@author
 	\else 
 		% Avoiding common accidental de-anonymization issue. --MM
-     		\bf Anonymous NAACL submission
+     		\bf Anonymous ACL submission
 	\fi
     \end{tabular}}
 
@@ -407,27 +413,17 @@
   \vskip 0.3in plus 2fil minus 0.1in
 }}
 
-% margins and font size for abstract
+% margins for abstract
 \renewenvironment{abstract}%
 		 {\centerline{\large\bf Abstract}%
 		  \begin{list}{}%
 		     {\setlength{\rightmargin}{0.6cm}%
 		      \setlength{\leftmargin}{0.6cm}}%
-		   \item[]\ignorespaces%
-		   \@setsize\normalsize{12pt}\xpt\@xpt
-		   }%
+		   \item[]\ignorespaces}%
 		 {\unskip\end{list}}
-  
+		     
 %\renewenvironment{abstract}{\centerline{\large\bf  
 % Abstract}\vspace{0.5ex}\begin{quote}}{\par\end{quote}\vskip 1ex}
-
-% Resizing figure and table captions
-\newcommand{\figcapfont}{\rm}
-\newcommand{\tabcapfont}{\rm}
-\renewcommand{\fnum@figure}{\figcapfont Figure \thefigure}
-\renewcommand{\fnum@table}{\tabcapfont Table \thetable}
-\renewcommand{\figcapfont}{\@setsize\normalsize{12pt}\xpt\@xpt}
-\renewcommand{\tabcapfont}{\@setsize\normalsize{12pt}\xpt\@xpt}	
 
 \RequirePackage{natbib}
 % for citation commands in the .tex, authors can use:
@@ -436,7 +432,6 @@
 \renewcommand\cite{\citep}	% to get "(Author Year)" with natbib    
 \newcommand\shortcite{\citeyearpar}% to get "(Year)" with natbib    
 \newcommand\newcite{\citet}	% to get "Author (Year)" with natbib    
-
 
 % bibliography
 

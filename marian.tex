@@ -1,99 +1,502 @@
-%
-% File naaclhlt2018.tex
-%
-%% Based on the style files for NAACL-HLT 2018, which were
-%% Based on the style files for ACL-2015, with some improvements
-%%  taken from the NAACL-2016 style
-%% Based on the style files for ACL-2014, which were, in turn,
-%% based on ACL-2013, ACL-2012, ACL-2011, ACL-2010, ACL-IJCNLP-2009,
-%% EACL-2009, IJCNLP-2008...
-%% Based on the style files for EACL 2006 by 
-%%e.agirre@ehu.es or Sergi.Balari@uab.es
-%% and that of ACL 08 by Joakim Nivre and Noah Smith
-
 \documentclass[11pt,a4paper]{article}
-\usepackage[hyperref]{naaclhlt2018}
+\RequirePackage[hyphens]{url}
+\usepackage[hyperref]{acl2018}
 \usepackage{times}
 \usepackage{latexsym}
 
-\usepackage{url}
+\usepackage{booktabs}
+\usepackage{listings}
+
+\usepackage{graphicx}
+\usepackage{tikz}
+\usepackage{pgfplots}
+\usepackage{pgfplotstable}
+\usepgfplotslibrary{groupplots}
+\pgfplotsset{compat=newest}
+\usepackage{siunitx}
+\usepackage{amsmath,amssymb,bm,bbm}
+\usepackage{datatool}
+\usepackage{etoolbox}
+\usepackage{stfloats}
+\usepackage{amsmath,amssymb,bm,bbm}
+\usepackage{datatool}
+\usepackage{etoolbox}
+\usepackage{stfloats}
+\usepackage{filecontents}
+\usepackage{enumitem}
+\setlist{noitemsep}
+
+\widowpenalty10000
+\clubpenalty10000
+
+\definecolor{bblue}{HTML}{4F81BD}
+\definecolor{rred}{HTML}{C0504D}
+\definecolor{ggreen}{HTML}{9BBB59}
+\definecolor{ppurple}{HTML}{9F4C7C}
+\definecolor{oorange}{HTML}{F08000}
+
+\renewcommand{\topfraction}{0.85}
+
+\lstset { %
+    language=C++,
+    basicstyle=\small\ttfamily
+}
 
 \aclfinalcopy % Uncomment this line for the final submission
 %\def\aclpaperid{***} %  Enter the acl Paper ID here
 
-%\setlength\titlebox{5cm}
-% You can expand the titlebox if you need extra space
-% to show all the authors. Please do not make the titlebox
-% smaller than 5cm (the original size); we will check this
-% in the camera-ready version and ask you to change it back.
+\title{Marian: Fast Neural Machine Translation in C++}
 
-
-\title{Marian NMT: Fast Neural Machine Translation in C++}
-
-\author{First Author \\
-  Affiliation / Address line 1 \\
-  Affiliation / Address line 2 \\
-  Affiliation / Address line 3 \\
-  {\tt email@domain} \\\And
-  Second Author \\
-  Affiliation / Address line 1 \\
-  Affiliation / Address line 2 \\
-  Affiliation / Address line 3 \\
-  {\tt email@domain} \\}
+\author{Marcin Junczys-Dowmunt$^{\dagger}$ \, Roman Grundkiewicz$^{*}$$^{\ddagger}$ \, Tomasz Dwojak$^{*}$ \\ {\bf Hieu Hoang \, Kenneth Heafield$^{\ddagger}$ \, Tom Neckermann$^{\ddagger}$ }  \\  {\bf Frank Seide$^{\dagger}$ \, Ulrich Germann$^{\ddagger}$ \, Alham Fikri$^{\ddagger}$ } \\ { \bf Nikolay Bogoychev$^{\ddagger}$ \, Andr\'{e} Martins$^{\mathparagraph}$ \, Alexandra Birch$^{\ddagger}$} \\[2mm]
+$^{\dagger}$Microsoft AI and Research \, $^{*}$Adam Mickiewicz University in Pozna\'{n} \\ $^{\ddagger}$University of Edinburgh \,  $^{\mathparagraph}$Unbabel }
 
 \date{}
 
 \begin{document}
 \maketitle
 \begin{abstract}
-Marian is an efficient Neural Machine Translation framework written in pure C++ with minimal dependencies. It has mainly been developed at the Adam Mickiewicz University in Poznań (AMU) and at the University of Edinburgh.
-It is currently being deployed in multiple European projects and is the main translation and training engine behind the neural MT launch at the World Intellectual Property Organization.
-  
+We present Marian, an efficient and self-contained Neural Machine Translation framework with an integrated automatic differentiation engine based on dynamic computation graphs. Marian is written entirely in C++. We describe the design of the encoder-decoder framework and demonstrate that a research-friendly toolkit can achieve high training and translation speed.  
 \end{abstract}
 
 \section{Introduction}
 
-The following instructions are directed to authors of papers submitted
-to NAACL-HLT 2018 or accepted for publication in its proceedings. All
-authors are required to adhere to these specifications. Authors are
-required to provide a Portable Document Format (PDF) version of their
-papers. \textbf{The proceedings are designed for printing on A4
-paper.}
+In this paper, we present Marian\footnote{Named after Marian Rejewski, a Polish mathematician and cryptologist who reconstructed the German military Enigma cipher machine sight-unseen in 1932. \url{https://en.wikipedia.org/wiki/Marian_Rejewski}.}, an efficient Neural Machine Translation framework written in pure C++ with minimal dependencies. It has mainly been developed at the Adam Mickiewicz University in Pozna\'{n} and at the University of Edinburgh. It is currently being deployed in multiple European projects and is the main translation and training engine behind the neural MT launch at the World Intellectual Property Organization.\footnote{\url{https://slator.com/technology/neural-conquers-patent-translation-in-major-wipo-roll-out/}}
 
-\section{Custom autodiff backend}
-The NAACL-HLT 2018 style defines a printed ruler which should be presented in the
-version submitted for review.  The ruler is provided in order that
-reviewers may comment on particular lines in the paper without
-circumlocution.  If you are preparing a document without the provided
-style files, please arrange for an equivalent ruler to
-appear on the final output pages.  The presence or absence of the ruler
-should not change the appearance of any other content on the page.  The
-camera ready copy should not contain a ruler. (\LaTeX\ users may uncomment the {\small\verb|\aclfinalcopy|} command in the document preamble.)  
+In the evolving eco-system of open-source NMT toolkits, Marian is occupying its own unique niche maybe best characterized by two aspects: 
+\begin{itemize}
+\item It is written completely in C++11 and intentionally does not provide Python bindings; model code and meta-algorithms are meant to be implemented in efficient C++ code.
+\item It is self-contained as far as the deep-learning back-end is concerned, providing its own reverse-mode automatic differentiation engine based on dynamic graphs.
+\end{itemize}
 
-\section{Extensible encoder-decoder Framework}
+Marian has minimal dependencies (only Boost and CUDA or a BLAS library) and allows for barrier-free optimization on all levels --- from meta-algorithms such as MPI-based multi-node training, efficient batched beam search or compact implementations of new models to custom operators and custom GPU kernels. The most recently added functionality is an experimental CPU-based back-end contributed by Intel. 
 
-\section{Benchmarks}
+%The new C++11 standard allows for elegant and compact code that does not incur more overhead than Python-based interfaces.\footnote{Our Transformer implementation consists of 500 lines of code and seamlessly integrates with other components of the toolkit.} 
 
-\section{Selected use-cases}
+Marian grew out of a C++ re-implementation of Nematus \cite{sennrich-EtAl:2017:EACLDemo}, and still maintains binary-compatibility for common models. Hence, we will compare speed mostly against Nematus. OpenNMT \cite{klein2017opennmt}, perhaps one of the most popular toolkits, has been reported to have training speed competitive to Nematus. 
+%While training and translation speed is one of our main objectives, Marian is a proven tool for research as we demonstrate in Section \ref{case}.
 
-\subsection{Replicating results from the Edinburgh WMT-2017 submission}
+Marian is distributed under the MIT license and available from \url{https://marian-nmt.github.io} or the GitHub repository \url{https://github.com/marian-nmt/marian}.
 
-\subsection{State-of-the-art Neural Grammatical Error Correction}
+\section{Design Outline}
 
-\subsection{State-of-the-art Automatic Post-Editing}
+We will very briefly discuss the design of Marian. Technical details of the implementations will be provided in later work.
 
-{\bf Citations}: Citations within the text appear in parentheses
-as~\cite{Gusfield:97} or, if the author's name appears in the text
-itself, as Gusfield~\shortcite{Gusfield:97}.
+\subsection{Custom Auto-Differentiation Engine}
+
+The deep-learning back-end included in Marian is based on reverse-mode auto-differentiation with dynamic computation graphs and among the established machine learning platforms most similar in design to DyNet \cite{dynet}. While the back-end could be used for other tasks than machine translation, we choose to optimize specifically for this and similar use cases. Optimization on this level include for instance efficient implementations of various fused RNN cells, attention mechanisms or an atomic layer-normalization \cite{ba2016layer} operator. 
+
+\subsection{Extensible Encoder-Decoder Framework}
+\label{encdec}
+
+Inspired by the stateful feature function framework in Moses \cite{conf/acl/KoehnHBCFBCSMZDBCH07}, we implement encoders and decoders as classes with the following (strongly simplified) interface:
+
+\begin{lstlisting}
+class Encoder {
+  EncoderState build(Batch);
+};
+
+class Decoder {
+  DecoderState startState(EncoderState[]);
+  DecoderState step(DecoderState, Batch);
+};
+\end{lstlisting}
+
+A Bahdanau-style encoder-decoder model would implement the entire encoder inside \lstinline|Encoder::build| based on the content of the batch and place the resulting encoder context inside the \lstinline|EncoderState| object. 
+
+\lstinline|Decoder::startState| receives a list of \lstinline|EncoderState| (one in the case of the Bahdanau model, multiple for multi-source models, none for language models) and creates the initial \lstinline|DecoderState|. 
+
+The \lstinline|Decoder::step| function consumes the target part of a batch to produce the output logits of a model. The time dimension is either expanded by broadcasting of single tensors or by looping over the individual time-steps (for instance in the case of RNNs). 
+Loops and other control structures are just the standard built-in C++ operations. 
+The same function can then be used to expand over all given time steps at once during training and scoring or step-by-step during translation. 
+Current hypotheses state (e.g.~RNN vectors) and current logits are placed in the next \lstinline|DecoderState| object. 
+
+Decoder states are used mostly during translation to select the next set of translation hypotheses. Complex encoder-decoder models can derive from \lstinline|DecoderState| to implement non-standard selection behavior, for instance hard-attention models need to increase attention indices based on the top-scoring hypotheses.
+
+This framework makes it possible to combine different encoders and decoders (e.g.~RNN-based encoder with a Transformer decoder) and reduces implementation effort. In most cases it is enough to implement a single inference step in order to train, score and translate with a new model. 
+
+\subsection{Efficient Meta-algorithms}
+
+On top of the auto-diff engine and encoder-decoder framework we implemented many efficient meta-algorithms. These include multi-device (GPU or CPU) training, scoring and batched beam search, ensembling of heterogeneous models (e.g.~Deep RNN models and Transformer or language models), multi-node training and more. 
+
+\section{Case Studies}\label{case}
+In this section we will illustrate how we used the Marian toolkit to facilitate our own research across several NLP problems. 
+Each subsection is meant as a showcase for different components of the toolkit and demonstrates the maturity and flexibility of the toolkit. Unless stated otherwise, all mentioned features are included in the Marian toolkit.  
+
+\subsection{Improving over WMT2017 systems}
+
+\newcite{DBLP:conf/wmt/SennrichBCGHHBW17} proposed the highest scoring NMT system in terms of BLEU during the WMT 2017 shared task on English-German news translation \cite{DBLP:conf/wmt/2017}, trained with the Nematus toolkit \cite{sennrich-EtAl:2017:EACLDemo}. In this section, we demonstrate that we can replicate and slightly outperform these results with an identical model architecture implemented in Marian and improve on the recipe with a Transformer-style \cite{NIPS2017_7181} model. 
+
+\subsubsection{Deep Transition RNN Architecture}
+
+The model architecture in \newcite{DBLP:conf/wmt/SennrichBCGHHBW17} is a sequence-to-sequence model with single-layer RNNs in both, the encoder and decoder. The RNN in the encoder is bi-directional. Depth is achieved by building stacked GRU-blocks resulting in very tall RNN cells for every recurrent step (deep transitions). The encoder consists of four GRU-blocks per cell, the decoder of eight GRU-blocks with an attention mechanism placed between the first and second block. As in \newcite{DBLP:conf/wmt/SennrichBCGHHBW17}, embeddings size is 512, RNN state size is 1024. We use layer-normalization \cite{ba2016layer} and variational drop-out with $p=0.1$ \cite{gal2016theoretically} inside GRU-blocks and attention.
+
+\subsubsection{Transformer Architecture}
+We very closely follow the architecture described in \newcite{NIPS2017_7181} and their "base" model. 
+
+\subsubsection{Training Recipe}
+
+\begin{table}[t]
+\centering
+\begin{tabular}{lcc}\toprule
+System &	test2016 &	test2017 \\ \midrule
+UEdin WMT17 (single) & 33.9 & 27.5 \\ 
++Ensemble of 4 & 35.1 & 28.3 \\ 
++R2L Reranking & 36.2 &	28.3 \\ \midrule \midrule
+Deep RNN (single) & 34.3 & 27.7 \\ 
++Ensemble of 4 & tbd & tbd \\ 
++R2L Reranking & tbd & tbd \\ \midrule
+Transformer (single) &	35.6 &	28.8 \\
++Ensemble of 4 &	36.4 &	29.4 \\ 
++R2L Reranking &	36.8 &	29.5 \\ \bottomrule
+\end{tabular}
+\caption{BLEU results for our replication of the UEdin WMT17 system for the en-de news translation task. We reproduced most steps and replaced
+the deep RNN model with a Transformer model.}
+\label{wmt-bleu}
+\end{table}
+
+Modeled after the description\footnote{The entire recipe is available in form of multiple scripts at \url{https://github.com/marian-nmt/marian-examples}.} from \newcite{DBLP:conf/wmt/SennrichBCGHHBW17}, we perform the following steps:
+
+\begin{itemize}
+\item preprocessing of training data, tokenization, true-casing\footnote{Proprocessing was performed using scripts from Moses \cite{conf/acl/KoehnHBCFBCSMZDBCH07}.}, vocabulary reduction to 36,000 joint BPE subword units \cite{sennrich2016bpe} with a separate tool.\footnote{Available from \url{https://github.com/rsennrich/subword-nmt}.}
+\item training of a shallow model for back-translation on parallel WMT17 data;
+\item translation of 10M German monolingual news sentences to English; concatenation of artificial training corpus with original data (times two) to produce new training data;
+\item training of four left-to-right (L2R) deep models (either RNN-based or Transformer-based);
+\item training of four additional deep models with right-to-left (R2L) orientation; \footnote{R2L training, scoring or decoding does not require data processing, right-to-left inversion is built into Marian.}
+\item ensemble-decoding with four L2R models resulting in an n-best list of 12 hypotheses per input sentence;
+\item rescoring of n-best list with four R2L models, all model scores are weighted equally; 
+\item evaluation on newstest-2016 (validation set) and newstest-2017 with sacreBLEU.\footnote{Available from \url{https://github.com/mjpost/sacreBLEU}}
+\end{itemize}
+
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}
+\begin{groupplot}[
+	group style={group size= 1 by 3,
+     ylabels at=edge left,
+     yticklabels at=edge left,
+     horizontal sep=5pt},
+     ytick scale label code/.code={},
+    small, width=0.4\textwidth,
+    ymajorgrids,
+    xlabel={Number of GPUs}, ylabel={Source tokens per second $\times 10^3$},
+    ymin=0, ymax=100000,
+    xtick={1 ,2 ,3, 4 ,5, 6, 7, 8},
+    legend style={at={(0.04,0.96)},anchor=north west},
+    nodes near coords style={font=\small, text=black,/pgf/number format/.cd,fixed zerofill,precision=1}]
+\nextgroupplot[scaled y ticks=base 10:-3]
+
+\addlegendimage{bblue, refstyle=barplot1}
+\addlegendentry{Shallow RNN}
+\addplot[ybar=0, ybar legend, bblue, fill, visualization depends on={rawy/1e3 \as \scaledy},
+	nodes near coords={\pgfmathprintnumber{\scaledy}}] plot coordinates {
+(1, 12444) (2, 23458) (3,35262) (4, 46630) (5, 54765) (6, 67936) (7, 72953) (8, 83855)};
+\label{barplot1}
+
+
+\addplot[gray, dashed] plot coordinates {
+(1, 12444) (8, 99552)
+};
+%\legend{shallow, projected};
+
+\nextgroupplot[scaled y ticks=base 10:-3]
+\addlegendimage{rred, refstyle=barplot2}
+\addlegendentry{Deep RNN}
+\addplot+[ybar=0, ybar legend, rred, mark=none, fill, visualization depends on={rawy/1e3 \as \scaledy},	nodes near coords={\pgfmathprintnumber{\scaledy}}] plot coordinates {
+(1, 7802) (2, 13119) (3, 17230) (4, 22756) (5, 28154) (6, 33374) (7, 37134) (8, 42487)
+};
+\label{barplot2}
+
+\addplot[gray, dashed] plot coordinates {
+(1, 7802) (8, 62416)
+};
+
+\nextgroupplot[scaled y ticks=base 10:-3]
+\addlegendimage{ggreen, refstyle=barplot3}
+\addlegendentry{Transformer}
+\addplot+[ybar=0, ggreen, ybar legend, mark=none, fill, visualization depends on={rawy/1e3 \as \scaledy},
+	nodes near coords={\pgfmathprintnumber{\scaledy}}] plot coordinates {
+(1, 9129) (2, 16445) (3, 23424) (4, 30381) (5, 37608)
+(6, 42897) (7, 48995) (8, 54938)
+};
+\label{barplot3}
+
+\addplot[gray, dashed] plot coordinates {
+(1, 9129) (8, 73032)
+};
+
+\end{groupplot}
+\end{tikzpicture}
+\caption{Training speed in thousands of source tokens per second for shallow RNN, deep RNN and Transformer model. Dashed line projects  linear scale-up based on single-GPU performance.}
+\label{wmt-speed-train}
+\end{figure}
+
+We train the deep models with synchronous Adam on 8 NVIDIA Titan X Pascal GPUs with 12GB RAM for 7 epochs each. The back-translation model is trained with asynchronous Adam on 8 GPUs. We do not specify a batch size as Marian adjusts the batch based on available memory to maximize speed and memory usage. %Batches will contain different numbers of sentences or words based on the maximum length of a sentence in a batch. This also guarantees that a preset memory budget will not be exceeded during training when longer sentences are encountered.
+
+All models use tied embeddings between source, target and output embeddings \cite{press2017using}. Contrary to \newcite{DBLP:conf/wmt/SennrichBCGHHBW17} or \newcite{NIPS2017_7181}, we do not average checkpoints, but maintain a continuously updated exponentially averaged model over the entire training. Following \newcite{NIPS2017_7181}, the learning rate is set to 0.0003 and decayed as the inverse square root of the number of updates after 16,000 updates. When training the transformer model, a linearly growing learning rate is used during the first 16,000 iterations, starting with 0 until the base learning rate is reached. 
+
+\subsubsection{Performance and Results}
+
+\begin{table}[t]
+\centering
+\begin{tabular}{lccc}\toprule
+Model & 1 & 8 & 64 \\ \midrule
+Shallow RNN & 112.3 & 25.6 & 15.7\\
+Deep Transition RNN & 179.4 & 36.5 & 21.0\\
+Transformer & 362.7 & 98.5 & 71.3\\ \bottomrule
+\end{tabular}
+\caption{Translation time in seconds for newstest-2017 (3,004 sentences, 76,501 source BPE tokens) for different architectures and batch sizes.}
+\label{tab-trans}
+\end{table}
+
+
+
+\DTLloaddb[headers={x,y,v}, keys={x,y,v}]{dataA}{m-cgru_1.dat}
+\DTLloaddb[headers={x,y,v}, keys={x,y,v}]{dataB}{m-cgru_2.dat}
+
+\begin{figure*}[t]
+\centering
+\def\drawalignmentA{}%
+\DTLforeach*{dataA}{\x=x,\y=y,\v=v}{
+    \appto\drawalignmentA{\fill}% \draw will not be expanded
+    \eappto\drawalignmentA{ [black, fill=bblue, fill opacity=\v, thick] (axis cs:\x,\y) rectangle (axis cs:\x+1,\y+1);}%
+}
+\def\drawalignmentB{}%
+\DTLforeach*{dataB}{\x=x,\y=y,\v=v}{
+    \appto\drawalignmentB{\fill}% \draw will not be expanded
+    \eappto\drawalignmentB{ [black, fill=bblue, fill opacity=\v, thick] (axis cs:\x,\y) rectangle (axis cs:\x+1,\y+1);}%
+}
+\begin{tikzpicture}
+\begin{groupplot}[
+  group style={
+     group size=2 by 1,
+     horizontal sep=10pt,
+     group name=G},
+  x=11pt, y=11pt,
+  xticklabel style={xshift=4pt,rotate=45,anchor=west,yshift=2pt},
+  yticklabel style={yshift=-6pt}]
+ 
+  \nextgroupplot[
+   y dir=reverse,
+   axis background/.style={draw=black, line width=.2pt},
+   axis x line*=top,
+  xmin=0, xmax=12,
+  ymin=0, ymax=15,
+  xtick={0,1,2,3,4,5,6,7,8,9,10,11},
+  ytick={0,1,2,3,4,5,6,7,8,9,10,11,12,13,14},
+  xticklabels={W\"{a}hlen, Sie, einen, Tastatur-, be-, fehl-, ssatz, im, Men\"{u}, festlegen, ., EOS},
+  yticklabels={W\"{a}hlen, Sie, einen, Tastatur-, be-, fehl-, ssatz, im, Men\"{u}, ``, Satz, '', aus, ., EOS},
+  tick style={draw=none},
+  tick label style={font=\footnotesize},
+  xlabel absolute,
+  xlabel={$\mathrm{mt}$},
+  grid=both,
+  xlabel style={yshift=2ex}] 
+\drawalignmentA
+\draw[rred,thick] (axis cs:0,10) rectangle (axis cs:13,11);
+ \nextgroupplot[
+  y dir=reverse,
+  axis background/.style={draw=black, line width=.2pt},
+  axis x line*=top,
+  xmin=0, xmax=10,
+  ymin=0, ymax=15,
+  xtick={0,1,2,3,4,5,6,7,8,9,10},
+  ytick={0,1,2,3,4,5,6,7,8,9,10,11,12,13,14},
+  yticklabels={W\"{a}hlen, Sie, einen, Tastatur-, be-, fehl-, ssatz, im, Men\"{u}, ``, Satz, '', aus, ., EOS},
+  yticklabel pos=right,
+  xticklabels={Select, a, shortcut, set, in, the, Set, menu, ., EOS},
+  tick style={draw=none},
+  grid=both,
+  tick label style={font=\footnotesize},
+  xlabel={$\mathrm{src}$},
+  xlabel absolute,
+  xlabel style={yshift=2ex},
+] \drawalignmentB
+\draw[rred,thick] (axis cs:0,10) rectangle (axis cs:10,11);
+\draw[rred,thick] (axis cs:6,0) rectangle (axis cs:7,15);
+\end{groupplot}
+\end{tikzpicture}
+\caption{Example for error recovery based on dual attention. The missing word ``Satz'' could only be recovered based on the original source (marked in red) as it was dropped in the raw MT output.}
+\label{ape-rec}
+\end{figure*}
+
+
+\paragraph{Quality.} In terms of BLEU (Table~\ref{wmt-bleu}), we match  the original Nematus models from \newcite{DBLP:conf/wmt/SennrichBCGHHBW17}.\footnote{The training process did not finish in time of the deadline, we will supply missing numbers marked with "tbd" in the final paper. Numbers should also appear soon here: \url{https://github.com/marian-nmt/marian-examples/tree/master/wmt2017-uedin}}
+Replacing the deep-transition RNN model with the transformer model results in a significant BLEU improvement of 1.2 BLEU on the WMT2017 test set. 
+
+\paragraph{Training speed.}
+
+In Figure~\ref{wmt-speed-train} we demonstrate the training speed as thousands of source tokens per second for the models trained in this recipe. All model types benefit from using more GPUs. Scaling is not linear (dashed lines), but close. The tokens-per-second rate (w/s) for Nematus on the same data on a single GPU is about 2800 w/s for the shallow model. Nematus does not have multi-GPU training. Marian achieves about 4 times faster training on a single GPU and about 30 times faster training on 8 GPUs for identical models.
+
+\paragraph{Translation speed.}
+
+The back-translation of 10M sentences with a shallow model takes about four hours on 8 GPUs at a speed of about 15,850 source tokens per second at a beam-size of 5 and a mini-batch size of 64. Batches of sentences are translated in parallel and asynchronously on multiple GPUs. 
+
+In Table~\ref{tab-trans} we report the total number of seconds to translate newstest-2017 (3,004 sentences, 76,501 source BPE tokens) on a single GPU for different batch sizes. We omit model load time (usually below 10s). Beam size is 5.
+
+
+\subsection{SOTA in Automatic Post-Editing}
+In our submission to the Automatic Post-Editing shared task at WMT-2017 \cite{bojar-EtAl:2017:WMT1} and follow-up work \cite{junczysdowmunt-grundkiewicz:2017:WMT, I17-1013}, 
+we explore multiple neural architectures adapted for the task of automatic post-editing of machine translation output as implementations in Marian. We focus on neural end-to-end models that combine both inputs $mt$ (raw MT output) and $src$ (source language input) in a single neural architecture, modeling $\{mt,src\}\rightarrow pe$ directly, where $pe$ is post-edited corrected output.
+
+These models are based on multi-source neural translation models introduced by \newcite{DBLP:journals/corr/ZophK16}. Furthermore, we investigate the effect of hard-attention models or neural transductors \cite{aharoni2016sequence} which seem to be well-suited for monolingual tasks, as well as combinations of both ideas. 
+Dual-attention models that are combined with hard attention remain competitive despite applying fewer changes to the input.
+
+The encoder-decoder framework described in section~\ref{encdec}, allowed to integrate dual encoders and hard-attention without changes to beam-search or ensembling mechanisms.
+The dual-attention mechanism over two encoders allowed to recover missing words that would not be recognized based on raw MT output alone, see Figure~\ref{ape-rec}.
+
+Our final system for the APE shared task scored second-best according to automatic metrics and best based on human evaluation.
+
+
+% \begin{table}[t]
+% \centering
+% \begin{tabular}{lcc} \toprule
+% Systems & TER & BLEU \\ \midrule
+% FBK  & 19.60 & 70.07 \\
+% \textbf{AMU} & \textbf{19.77} & \textbf{69.50} \\
+% DCU  & 20.11 & 69.19 \\
+% USAAR  & 23.05 & 65.01 \\
+% LIG   & 23.22 & 65.12 \\
+% JXNU  & 23.31 & 65.66 \\
+% CUNI  & 24.03 & 64.28 \\
+% Baseline (MT) & 24.48 & 62.49 \\
+% \bottomrule
+% \end{tabular}
+% \caption{Results for WMT2017 shared task on Automatic Post-Editing, primary submissions, automatic evaluation.}
+% \label{ape-auto}
+% \end{table}
+
+% \begin{table}[t]
+% \centering
+% \begin{tabular}{rrrl}
+% \toprule
+% \# & Ave \% & Ave z & System \\
+% \midrule
+% -- & 84.8 & 0.520 & Human post edit \\ \midrule
+% 1  & \bf 78.2 & \bf 0.261 & \bf AMU \\
+%    & 77.9 & 0.261 & FBK \\
+%    & 76.8 & 0.221 & DCU \\ \midrule
+% 4  & 73.8 & 0.115 & JXNU \\ \midrule
+% 5  & 71.9 & 0.038 & USAAR \\
+%    & 71.1 & 0.014 & CUNI \\
+%    & 70.2 & -0.020 & LIG \\ \midrule
+% -- & 68.6 & -0.083 & Baseline (MT) \\
+% \bottomrule
+% \end{tabular}
+% \caption{Results for WMT2017 shared task on Automatic Post-Editing, primary submissions, human evaluation. Source: \newcite{bojar-EtAl:2017:WMT1}}
+% \label{ape-human}
+% \end{table}
+
+\subsection{SOTA in Grammatical Error Correction}
+
+In \newcite{mjdrggec}, we use Marian for research on transferring methods from low-resource NMT on the ground of automatic grammatical error correction (GEC).
+Previously, neural methods in GEC did not reach state-of-the-art results compared to phrase-based SMT baselines. We successfully adapt several low-resource MT methods for GEC.
+  
+We propose a set of model-independent methods for neural GEC that can be easily applied in most GEC settings.
+The combined effects of these methods result in better than state-of-the-art neural GEC models that outperform previously best neural GEC systems by more than 8\% M$^2$ on the CoNLL-2014 benchmark and more than 4.5\% on the JFLEG test set. Non-neural state-of-the-art systems are matched on the CoNLL-2014 benchmark and outperformed by 2\% on JFLEG.
+
+\begin{figure}[t]
+\begin{filecontents}{test2014}
+n m1    m2    m3    m4  ens lm
+1 34.86 31.53 32.03 33.02 30.92 48.90 % Baseline
+2 41.48 42.05 40.15 42.68 41.69 50.33 % Baseline + Dropout src
+3 43.85 42.71 42.30 42.30 43.29 50.63% + Repeat Nucle
+4 44.36 44.80 44.78 44.75 47.78 52.47 %+ Repeat Nucle + MER | n-gram 51.72 54.14
+5 46.57 46.21 44.93 47.25 47.96 52.86 % tied
+6 49.16 49.00 49.31 48.95 50.95 53.39% Edit-MLE
+7 47.28 48.19 48.23 48.28 51.4 51.68% Edit-MLE + w2v
+8 51.76 51.26 51.81 51.62 54.1 54.58 % Edit-MLE + rnn
+9 51.67 52.06 52.48 52.37 55.18 55.5 % Edinburgh-WMT
+10 53.27 52.87 53.29 52.87 56.08 55.9 % Transformer
+
+\end{filecontents}
+\begin{filecontents}{jflegtest}
+n m1    m2    m3    m4  ens lm
+1 52.3354 51.8362 52.4446 52.0009 52.5454 56.7187 % Baseline
+2 53.7702 54.1324 54.3843 54.0569 54.0073 58.2210% Baseline + Dropout src
+3 54.3458 54.4300 54.1390 54.0862 54.2835 58.5198% Repeat Nucle
+4 54.1879 54.3821 54.4472 54.5760 54.6038 58.2805% + MER
+5 53.8811 54.4224 54.4072 54.1486 54.0713 58.3811% tied
+6 56.4899 55.7947 55.9239 56.3017 56.3602 58.27
+7 57.2551 56.7302 56.5462 56.6125 57.4243 58.39
+8 57.2479 57.5487 57.5377 57.3213 58.1944 59.2157
+9 58.0402 58.0812 57.6265 57.8987 58.5348 59.2350
+10 57.7698 57.9907 58.0555 57.8116 58.4829 59.88 % Transformer
+
+\end{filecontents}
+\begin{tikzpicture}
+\begin{axis}[
+ylabel=M\textsuperscript{2},
+every axis y label/.style={
+     at={(ticklabel* cs:0.98)},
+     anchor=south east, align=right
+},
+height=0.34\textheight,
+width=0.9\linewidth,
+scale only axis,
+enlarge y limits,
+ymajorgrids, xmajorgrids,
+major grid style={dotted},
+xtick={1,2,3,4,5,6,7,8,9,10},
+legend cell align=left,
+legend style={column sep=10pt},
+every node near coord/.append style={anchor=south, font=\small, xshift=0pt, /pgf/number format/.cd, fixed, fixed zerofill, precision=1, /tikz/.cd},
+xticklabels={Baseline,+Dropout-Src.,+Domain-Adapt.,+Error-Adapt.,
++Tied-Emb.,+Edit-MLE,+Pretrain-Emb.,+Pretrain-Dec.,Deep RNN,Transformer},
+ymax=55.5,
+xmin=0.4,
+xmax=11.2,
+legend pos=south east,
+xticklabel style={align=right, rotate=45, anchor=north east},
+]
+\addplot+[solid, thick, ggreen, mark=-, 
+mark options={solid, fill=black, black},
+error bars/.cd,y dir=both,y explicit, error bar style={solid, black},
+    error mark options={
+      rotate=90,
+      mark size=6pt
+    }]
+table[x index=0,
+      y expr={(\thisrow{m1}+\thisrow{m2}+\thisrow{m3}+\thisrow{m4})/4},
+      y error plus expr={max(\thisrow{m1},\thisrow{m2},\thisrow{m3},\thisrow{m4})-(\thisrow{m1}+\thisrow{m2}+\thisrow{m3}+\thisrow{m4})/4},
+      y error minus expr={-min(\thisrow{m1},\thisrow{m2},\thisrow{m3},\thisrow{m4})+(\thisrow{m1}+\thisrow{m2}+\thisrow{m3}+\thisrow{m4})/4},
+      ] {test2014};
+
+\addplot+[nodes near coords,
+every node near coord/.append style={anchor=west, xshift=2pt},
+solid, thick, bblue, mark=*,mark options={solid, bblue, fill=bblue}]
+table[x index=0, y=ens] {test2014};
+
+\addplot+[solid, thick, rred, nodes near coords, mark=*, mark options={solid,fill=rred,rred}]
+table[x index=0, y=lm] {test2014};
+
+ \draw[dashed, gray] (axis cs:0,53.14) -- (axis cs:12,53.14)
+ node[below, anchor=south west, pos=0.04] {\small Best Sys-Comb};
+% 
+ \draw[dashed, gray] (axis cs:0,49.49) -- (axis cs:12,49.49)
+ node[below, anchor=south east, pos=0.94] {\small Best SMT};
+ 
+ \draw[dashed, gray] (axis cs:0,45.15) -- (axis cs:12,45.15)
+ node[anchor=south east, pos=0.94] {\small Best NMT};
+
+\legend{Average of 4, Ensemble of 4, Ens. with LM}
+\end{axis}
+\end{tikzpicture}
+\caption{Comparison on the CoNLL-2014 test set for investigated methods.}\label{fig.all}
+\end{figure}
+
+
+Figure~\ref{fig.all} illustrates these results on the CoNLL-2014 test set. 
+To produce this graph, 40 GEC models (four per entry) and 24 language models (one per GEC model with pre-training) have been trained.  The language models follow the decoder architecture and can be used for transfer learning (initialization of translation models), weighted decode-time ensembling and re-ranking. This also includes a Transformer-style language model with self-attention layers. 
+
+Proposed methods include extensions to Marian, such as source-side noise, a GEC-specific weighted training-objective, usage of pre-trained embeddings, transfer learning with pre-trained language models, decode-time ensembling of independently trained GEC models and language models, and various deep architectures.
+
+\section{Future Work and Conclusions}
+We introduced Marian, a self-contained neural machine translation toolkit written in C++ with focus on efficiency and research. Future work on Marian's back-end will look at faster CPU-bound computation, auto-batching mechanisms and automatic kernel fusion. On the front-end side we hope to keep up with future state-of-the-art models.
 
 \section*{Acknowledgments}
 
-The development of Marian received funding from the European Union's Horizon 2020 Research and Innovation Programme under grant agreements 688139 (SUMMA; 2016-2019), 645487 (Modern MT; 2015-2017), 644333 (TraMOOC; 2015-2017), 644402 (HimL; 2015-2017), the Amazon Academic Research Awards program, and the World Intellectual Property Organization. \\
+The development of Marian received funding from the European Union's Horizon 2020 Research and Innovation Programme under grant agreements 688139 (SUMMA; 2016-2019), 645487 (Modern MT; 2015-2017), 644333 (TraMOOC; 2015-2017), 644402 (HimL; 2015-2017), the Amazon Academic Research Awards program, and the World Intellectual Property Organization. The CPU back-end was contributed by Intel. 
 
-\noindent {\bf Preparing References:} \\
-
-Where \verb|naaclhlt2018| corresponds to a naaclhlt2018.bib file.
-\bibliography{naaclhlt2018}
+\bibliography{marian}
 \bibliographystyle{acl_natbib}
-
 \end{document}
