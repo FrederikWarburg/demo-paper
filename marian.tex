@@ -486,7 +486,7 @@ table[x index=0, y=lm] {test2014};
 
 
 Figure~\ref{fig.all} illustrates these results on the CoNLL-2014 test set. 
-To produce this graph, 40 GEC models (four per entry) and 24 language models (one per GEC model with pre-training) have been trained.  The language models follow the decoder architecture and can be used for transfer learning (initialization of translation models), weighted decode-time ensembling and re-ranking. This also includes a Transformer-style language model with self-attention layers. 
+To produce this graph, 40 GEC models (four per entry) and 24 language models (one per GEC model with pre-training) have been trained.  The language models follow the decoder architecture and can be used for transfer learning, weighted decode-time ensembling and re-ranking. This also includes a Transformer-style language model with self-attention layers. 
 
 Proposed methods include extensions to Marian, such as source-side noise, a GEC-specific weighted training-objective, usage of pre-trained embeddings, transfer learning with pre-trained language models, decode-time ensembling of independently trained GEC models and language models, and various deep architectures.
 
@@ -495,7 +495,9 @@ We introduced Marian, a self-contained neural machine translation toolkit writte
 
 \section*{Acknowledgments}
 
-The development of Marian received funding from the European Union's Horizon 2020 Research and Innovation Programme under grant agreements 688139 (SUMMA; 2016-2019), 645487 (Modern MT; 2015-2017), 644333 (TraMOOC; 2015-2017), 644402 (HimL; 2015-2017), the Amazon Academic Research Awards program, and the World Intellectual Property Organization. The CPU back-end was contributed by Intel. 
+{\small The development of Marian received funding from the European Union's Horizon 2020 Research and Innovation Programme under grant agreements 688139 (SUMMA; 2016-2019), 645487 (Modern MT; 2015-2017), 644333 (TraMOOC; 2015-2017), 644402 (HimL; 2015-2017), the Amazon Academic Research Awards program, and the World Intellectual Property Organization. The CPU back-end was contributed by Intel. 
+
+ This research is based upon work supported in part by the Office of the Director of National Intelligence (ODNI), Intelligence Advanced Research Projects Activity (IARPA), via contract \#FA8650-17-C-9117. The views and conclusions contained herein are those of the authors and should not be interpreted as necessarily representing the official policies, either expressed or implied, of ODNI, IARPA, or the U.S. Government. The U.S. Government is authorized to reproduce and distribute reprints for governmental purposes notwithstanding any copyright annotation therein.\par}
 
 \bibliography{marian}
 \bibliographystyle{acl_natbib}
