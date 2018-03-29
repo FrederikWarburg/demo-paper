@@ -48,7 +48,7 @@
 \title{Marian: Fast Neural Machine Translation in C++}
 
 \author{Marcin Junczys-Dowmunt$^{\dagger}$ \, Roman Grundkiewicz$^{*}$$^{\ddagger}$ \, Tomasz Dwojak$^{*}$ \\ {\bf Hieu Hoang \, Kenneth Heafield$^{\ddagger}$ \, Tom Neckermann$^{\ddagger}$ }  \\  {\bf Frank Seide$^{\dagger}$ \, Ulrich Germann$^{\ddagger}$ \, Alham Fikri$^{\ddagger}$ } \\ { \bf Nikolay Bogoychev$^{\ddagger}$ \, Andr\'{e} Martins$^{\mathparagraph}$ \, Alexandra Birch$^{\ddagger}$} \\[2mm]
-$^{\dagger}$Microsoft AI and Research \, $^{*}$Adam Mickiewicz University in Pozna\'{n} \\ $^{\ddagger}$University of Edinburgh \,  $^{\mathparagraph}$Unbabel }
+$^{\dagger}$Microsoft Translator \, $^{*}$Adam Mickiewicz University in Pozna\'{n} \\ $^{\ddagger}$University of Edinburgh \,  $^{\mathparagraph}$Unbabel }
 
 \date{}
 
@@ -143,37 +143,39 @@ UEdin WMT17 (single) & 33.9 & 27.5 \\
 +Ensemble of 4 & 35.1 & 28.3 \\ 
 +R2L Reranking & 36.2 &	28.3 \\ \midrule \midrule
 Deep RNN (single) & 34.3 & 27.7 \\ 
-+Ensemble of 4 & tbd & tbd \\ 
++Ensemble of 4 & 35.3 & 28.2 \\ 
 +R2L Reranking & tbd & tbd \\ \midrule
 Transformer (single) &	35.6 &	28.8 \\
 +Ensemble of 4 &	36.4 &	29.4 \\ 
 +R2L Reranking &	36.8 &	29.5 \\ \bottomrule
 \end{tabular}
-\caption{BLEU results for our replication of the UEdin WMT17 system for the en-de news translation task. We reproduced most steps and replaced
-the deep RNN model with a Transformer model.}
+\caption{BLEU results for our replication of the UEdin WMT17 system for the en-de news translation task.
+We reproduced most steps and replaced the deep RNN model with a Transformer model.}
 \label{wmt-bleu}
 \end{table}
 
 Modeled after the description\footnote{The entire recipe is available in form of multiple scripts at \url{https://github.com/marian-nmt/marian-examples}.} from \newcite{DBLP:conf/wmt/SennrichBCGHHBW17}, we perform the following steps:
 
 \begin{itemize}
-\item preprocessing of training data, tokenization, true-casing\footnote{Proprocessing was performed using scripts from Moses \cite{conf/acl/KoehnHBCFBCSMZDBCH07}.}, vocabulary reduction to 36,000 joint BPE subword units \cite{sennrich2016bpe} with a separate tool.\footnote{Available from \url{https://github.com/rsennrich/subword-nmt}.}
+\item preprocessing of training data, tokenization, true-casing\footnote{Proprocessing was performed using scripts from Moses \cite{conf/acl/KoehnHBCFBCSMZDBCH07}.}, vocabulary reduction to 36,000 joint BPE subword units \cite{sennrich2016bpe} with a separate tool.\footnote{\url{https://github.com/rsennrich/subword-nmt}}
 \item training of a shallow model for back-translation on parallel WMT17 data;
 \item translation of 10M German monolingual news sentences to English; concatenation of artificial training corpus with original data (times two) to produce new training data;
 \item training of four left-to-right (L2R) deep models (either RNN-based or Transformer-based);
 \item training of four additional deep models with right-to-left (R2L) orientation; \footnote{R2L training, scoring or decoding does not require data processing, right-to-left inversion is built into Marian.}
 \item ensemble-decoding with four L2R models resulting in an n-best list of 12 hypotheses per input sentence;
 \item rescoring of n-best list with four R2L models, all model scores are weighted equally; 
-\item evaluation on newstest-2016 (validation set) and newstest-2017 with sacreBLEU.\footnote{Available from \url{https://github.com/mjpost/sacreBLEU}}
+\item evaluation on newstest-2016 (validation set) and newstest-2017 with sacreBLEU.\footnote{\url{https://github.com/mjpost/sacreBLEU}}
 \end{itemize}
 
 \begin{figure}[t]
 \centering
 \begin{tikzpicture}
 \begin{groupplot}[
-	group style={group size= 1 by 3,
+	group style={group size= 1 by 3, vertical sep=1em,
      ylabels at=edge left,
      yticklabels at=edge left,
+     xlabels at=edge bottom,
+     xticklabels at=edge bottom,
      horizontal sep=5pt},
      ytick scale label code/.code={},
     small, width=0.4\textwidth,
@@ -315,12 +317,13 @@ Transformer & 362.7 & 98.5 & 71.3\\ \bottomrule
 \draw[rred,thick] (axis cs:6,0) rectangle (axis cs:7,15);
 \end{groupplot}
 \end{tikzpicture}
+\vspace{-2mm}
 \caption{Example for error recovery based on dual attention. The missing word ``Satz'' could only be recovered based on the original source (marked in red) as it was dropped in the raw MT output.}
 \label{ape-rec}
 \end{figure*}
 
 
-\paragraph{Quality.} In terms of BLEU (Table~\ref{wmt-bleu}), we match  the original Nematus models from \newcite{DBLP:conf/wmt/SennrichBCGHHBW17}.\footnote{The training process did not finish in time of the deadline, we will supply missing numbers marked with "tbd" in the final paper. Numbers should also appear soon here: \url{https://github.com/marian-nmt/marian-examples/tree/master/wmt2017-uedin}}
+\paragraph{Quality.} In terms of BLEU (Table~\ref{wmt-bleu}), we match  the original Nematus models from \newcite{DBLP:conf/wmt/SennrichBCGHHBW17}. 
 Replacing the deep-transition RNN model with the transformer model results in a significant BLEU improvement of 1.2 BLEU on the WMT2017 test set. 
 
 \paragraph{Training speed.}
@@ -334,7 +337,7 @@ The back-translation of 10M sentences with a shallow model takes about four hour
 In Table~\ref{tab-trans} we report the total number of seconds to translate newstest-2017 (3,004 sentences, 76,501 source BPE tokens) on a single GPU for different batch sizes. We omit model load time (usually below 10s). Beam size is 5.
 
 
-\subsection{SOTA in Automatic Post-Editing}
+\subsection{State-of-the-art in Neural Automatic Post-Editing}
 In our submission to the Automatic Post-Editing shared task at WMT-2017 \cite{bojar-EtAl:2017:WMT1} and follow-up work \cite{junczysdowmunt-grundkiewicz:2017:WMT, I17-1013}, 
 we explore multiple neural architectures adapted for the task of automatic post-editing of machine translation output as implementations in Marian. We focus on neural end-to-end models that combine both inputs $mt$ (raw MT output) and $src$ (source language input) in a single neural architecture, modeling $\{mt,src\}\rightarrow pe$ directly, where $pe$ is post-edited corrected output.
 
@@ -386,7 +389,7 @@ Our final system for the APE shared task scored second-best according to automat
 % \label{ape-human}
 % \end{table}
 
-\subsection{SOTA in Grammatical Error Correction}
+\subsection{State-of-the-art in Neural Grammatical Error Correction}
 
 In \newcite{mjdrggec}, we use Marian for research on transferring methods from low-resource NMT on the ground of automatic grammatical error correction (GEC).
 Previously, neural methods in GEC did not reach state-of-the-art results compared to phrase-based SMT baselines. We successfully adapt several low-resource MT methods for GEC.
@@ -481,6 +484,7 @@ table[x index=0, y=lm] {test2014};
 \legend{Average of 4, Ensemble of 4, Ens. with LM}
 \end{axis}
 \end{tikzpicture}
+\vspace{-10mm}
 \caption{Comparison on the CoNLL-2014 test set for investigated methods.}\label{fig.all}
 \end{figure}
 
@@ -495,7 +499,7 @@ We introduced Marian, a self-contained neural machine translation toolkit writte
 
 \section*{Acknowledgments}
 
-{\small The development of Marian received funding from the European Union's Horizon 2020 Research and Innovation Programme under grant agreements 688139 (SUMMA; 2016-2019), 645487 (Modern MT; 2015-2017), 644333 (TraMOOC; 2015-2017), 644402 (HimL; 2015-2017), the Amazon Academic Research Awards program, and the World Intellectual Property Organization. The CPU back-end was contributed by Intel. 
+{\small The development of Marian received funding from the European Union's Horizon 2020 Research and Innovation Programme under grant agreements 688139 (SUMMA; 2016-2019), 645487 (Modern MT; 2015-2017), 644333 (TraMOOC; 2015-2017), 644402 (HimL; 2015-2017), the Amazon Academic Research Awards program, and the World Intellectual Property Organization. The CPU back-end was contributed by Intel under a partnership with the Alan Turing Institute. 
 
  This research is based upon work supported in part by the Office of the Director of National Intelligence (ODNI), Intelligence Advanced Research Projects Activity (IARPA), via contract \#FA8650-17-C-9117. The views and conclusions contained herein are those of the authors and should not be interpreted as necessarily representing the official policies, either expressed or implied, of ODNI, IARPA, or the U.S. Government. The U.S. Government is authorized to reproduce and distribute reprints for governmental purposes notwithstanding any copyright annotation therein.\par}
 
