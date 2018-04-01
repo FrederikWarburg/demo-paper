@@ -47,8 +47,8 @@
 
 \title{Marian: Fast Neural Machine Translation in C++}
 
-\author{Marcin Junczys-Dowmunt$^{\dagger}$ \, Roman Grundkiewicz$^{*}$$^{\ddagger}$ \, Tomasz Dwojak$^{*}$ \\ {\bf Hieu Hoang \, Kenneth Heafield$^{\ddagger}$ \, Tom Neckermann$^{\ddagger}$ }  \\  {\bf Frank Seide$^{\dagger}$ \, Ulrich Germann$^{\ddagger}$ \, Alham Fikri$^{\ddagger}$ } \\ { \bf Nikolay Bogoychev$^{\ddagger}$ \, Andr\'{e} Martins$^{\mathparagraph}$ \, Alexandra Birch$^{\ddagger}$} \\[2mm]
-$^{\dagger}$Microsoft Translator \, $^{*}$Adam Mickiewicz University in Pozna\'{n} \\ $^{\ddagger}$University of Edinburgh \,  $^{\mathparagraph}$Unbabel }
+\author{Marcin Junczys-Dowmunt$^{\dagger}$ \, Roman Grundkiewicz$^{*}$$^{\ddagger}$ \, Tomasz Dwojak$^{*}$ \\ {\bf Hieu Hoang \, Kenneth Heafield$^{\ddagger}$ \, Tom Neckermann$^{\ddagger}$ }  \\  {\bf Frank Seide$^{\dagger}$ \, Ulrich Germann$^{\ddagger}$ \, Alham Fikri Aji$^{\ddagger}$ } \\ { \bf Nikolay Bogoychev$^{\ddagger}$ \, Andr\'{e} Martins$^{\mathparagraph}$ \, Alexandra Birch$^{\ddagger}$} \\[2mm]
+$^{\dagger}$Microsoft \, $^{*}$Adam Mickiewicz University in Pozna\'{n} \\ $^{\ddagger}$University of Edinburgh \,  $^{\mathparagraph}$Unbabel }
 
 \date{}
 
@@ -60,15 +60,15 @@ We present Marian, an efficient and self-contained Neural Machine Translation fr
 
 \section{Introduction}
 
-In this paper, we present Marian\footnote{Named after Marian Rejewski, a Polish mathematician and cryptologist who reconstructed the German military Enigma cipher machine sight-unseen in 1932. \url{https://en.wikipedia.org/wiki/Marian_Rejewski}.}, an efficient Neural Machine Translation framework written in pure C++ with minimal dependencies. It has mainly been developed at the Adam Mickiewicz University in Pozna\'{n} and at the University of Edinburgh. It is currently being deployed in multiple European projects and is the main translation and training engine behind the neural MT launch at the World Intellectual Property Organization.\footnote{\url{https://slator.com/technology/neural-conquers-patent-translation-in-major-wipo-roll-out/}}
+In this paper, we present Marian,\footnote{Named after Marian Rejewski, a Polish mathematician and cryptologist who reconstructed the German military Enigma cipher machine sight-unseen in 1932. \url{https://en.wikipedia.org/wiki/Marian_Rejewski}.} an efficient Neural Machine Translation framework written in pure C++ with minimal dependencies. It has mainly been developed at the Adam Mickiewicz University in Pozna\'{n} and at the University of Edinburgh. It is currently being deployed in multiple European projects and is the main translation and training engine behind the neural MT launch at the World Intellectual Property Organization.\footnote{\url{https://slator.com/technology/neural-conquers-patent-translation-in-major-wipo-roll-out/}}
 
-In the evolving eco-system of open-source NMT toolkits, Marian is occupying its own unique niche maybe best characterized by two aspects: 
+In the evolving eco-system of open-source NMT toolkits, Marian occupies its own niche best characterized by two aspects:
 \begin{itemize}
 \item It is written completely in C++11 and intentionally does not provide Python bindings; model code and meta-algorithms are meant to be implemented in efficient C++ code.
-\item It is self-contained as far as the deep-learning back-end is concerned, providing its own reverse-mode automatic differentiation engine based on dynamic graphs.
+\item It is self-contained with its own back end, which provides reverse-mode automatic differentiation based on dynamic graphs.
 \end{itemize}
 
-Marian has minimal dependencies (only Boost and CUDA or a BLAS library) and allows for barrier-free optimization on all levels --- from meta-algorithms such as MPI-based multi-node training, efficient batched beam search or compact implementations of new models to custom operators and custom GPU kernels. The most recently added functionality is an experimental CPU-based back-end contributed by Intel. 
+Marian has minimal dependencies (only Boost and CUDA or a BLAS library) and enables barrier-free optimization at all levels: meta-algorithms such as MPI-based multi-node training, efficient batched beam search, compact implementations of new models, custom operators, and custom GPU kernels. Intel has contributed and is optimizing a CPU backend. %The most recently added functionality is an experimental CPU-based back-end contributed by Intel.
 
 %The new C++11 standard allows for elegant and compact code that does not incur more overhead than Python-based interfaces.\footnote{Our Transformer implementation consists of 500 lines of code and seamlessly integrates with other components of the toolkit.} 
 
@@ -144,7 +144,7 @@ UEdin WMT17 (single) & 33.9 & 27.5 \\
 +R2L Reranking & 36.2 &	28.3 \\ \midrule \midrule
 Deep RNN (single) & 34.3 & 27.7 \\ 
 +Ensemble of 4 & 35.3 & 28.2 \\ 
-+R2L Reranking & tbd & tbd \\ \midrule
++R2L Reranking & 36.1 & 28.6 \\ \midrule
 Transformer (single) &	35.6 &	28.8 \\
 +Ensemble of 4 &	36.4 &	29.4 \\ 
 +R2L Reranking &	36.8 &	29.5 \\ \bottomrule
@@ -232,7 +232,7 @@ Modeled after the description\footnote{The entire recipe is available in form of
 \label{wmt-speed-train}
 \end{figure}
 
-We train the deep models with synchronous Adam on 8 NVIDIA Titan X Pascal GPUs with 12GB RAM for 7 epochs each. The back-translation model is trained with asynchronous Adam on 8 GPUs. We do not specify a batch size as Marian adjusts the batch based on available memory to maximize speed and memory usage. %Batches will contain different numbers of sentences or words based on the maximum length of a sentence in a batch. This also guarantees that a preset memory budget will not be exceeded during training when longer sentences are encountered.
+We train the deep models with synchronous Adam on 8 NVIDIA Titan X Pascal GPUs with 12GB RAM for 7 epochs each. The back-translation model is trained with asynchronous Adam on 8 GPUs. We do not specify a batch size as Marian adjusts the batch based on available memory to maximize speed and memory usage.  This guarantees that a chosen memory budget will not be exceeded during training.
 
 All models use tied embeddings between source, target and output embeddings \cite{press2017using}. Contrary to \newcite{DBLP:conf/wmt/SennrichBCGHHBW17} or \newcite{NIPS2017_7181}, we do not average checkpoints, but maintain a continuously updated exponentially averaged model over the entire training. Following \newcite{NIPS2017_7181}, the learning rate is set to 0.0003 and decayed as the inverse square root of the number of updates after 16,000 updates. When training the transformer model, a linearly growing learning rate is used during the first 16,000 iterations, starting with 0 until the base learning rate is reached. 
 
@@ -332,7 +332,7 @@ In Figure~\ref{wmt-speed-train} we demonstrate the training speed as thousands o
 
 \paragraph{Translation speed.}
 
-The back-translation of 10M sentences with a shallow model takes about four hours on 8 GPUs at a speed of about 15,850 source tokens per second at a beam-size of 5 and a mini-batch size of 64. Batches of sentences are translated in parallel and asynchronously on multiple GPUs. 
+The back-translation of 10M sentences with a shallow model takes about four hours on 8 GPUs at a speed of about 15,850 source tokens per second at a beam-size of 5 and a batch size of 64. Batches of sentences are translated in parallel on multiple GPUs. 
 
 In Table~\ref{tab-trans} we report the total number of seconds to translate newstest-2017 (3,004 sentences, 76,501 source BPE tokens) on a single GPU for different batch sizes. We omit model load time (usually below 10s). Beam size is 5.
 
